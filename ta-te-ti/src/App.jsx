@@ -1,71 +1,100 @@
-import { useState } from 'react'
-import './App.css'
-
-const turnos = {
-  X: 'x',
-  O: 'o',
-}
-
-
-const Cuadrado = ({ children, isSelected, updateTablero, index }) => {
-  const className = `square ${isSelected ? 'is-selected' : ''}`;
-
-  const handleClick = () =>{
-    updateTablero(index) //paso el indice de donde se hizo click
-  }
-
-  return (
-    <div onClick={handleClick} className={className}>
-      {children}
-    </div>
-  );
-};
-
+import { useState } from 'react';
+import './App.css';
+import confetti from 'canvas-confetti';
+import { Cuadrado } from './Componentes/Cuadrado';
+import { turnos, Opciones} from './Constantes';
 
 function App() {
-  const [tablero, setTablero] = useState(Array(9).fill(null))
-  const [turno, setTurno] = useState(turnos.X)
+  const [tablero, setTablero] = useState(Array(9).fill(null));
+  const [turno, setTurno] = useState(turnos.X);
+  const [ganador, setGanador] = useState(null);
+
+  const verGanador = (tableroCheck) => {
+    for (const combo of Opciones) {
+      const [a, b, c] = combo;
+      if (
+        tableroCheck[a] && // Verifica si en la posición a hay algo
+        tableroCheck[a] === tableroCheck[b] && // Verifica si a es igual a b
+        tableroCheck[a] === tableroCheck[c] // Verifica si a es igual a c
+      ) {
+        return tableroCheck[a];
+      }
+    }
+    return null;
+  };
+
+  const verificarEmpate = (tableroCheck) => {
+    return tableroCheck.every((cuadrado) => cuadrado !== null);
+  };
+
+  const reiniciarJuego = () => {
+    setTablero(Array(9).fill(null));
+    setTurno(turnos.X);
+    setGanador(null);
+  };
 
   const updateTablero = (index) => {
-    const newTablero = [...tablero] //Crea un nuevo tablero
-    newTablero[index] = turno; //donde se hizo click pone el turno (X o O)
-    setTablero(newTablero) //Actualiza el tablero
+    if (tablero[index] || ganador) return;
+
+    const newTablero = [...tablero]; 
+    newTablero[index] = turno; 
+    setTablero(newTablero); 
+
+    const siguienteTurno = turno === turnos.X ? turnos.O : turnos.X; 
+    setTurno(siguienteTurno);
+
+    const newGanador = verGanador(newTablero);
+    if (newGanador) {
+      confetti()
+      confetti()
+      confetti()
+      setGanador(newGanador);
+    } else if (verificarEmpate(newTablero)) {
+      setGanador('empate');
+    }
+  };
 
 
-    const siguienteTurno = turno === turnos.X ? turnos.O : turnos.X //if para cambiar al siguiente turno
-    setTurno(siguienteTurno)
-  }
 
   return (
-    <div className='board'> 
+    <div className="board">
       <h1>Ta Te Ti</h1>
+      <button onClick={reiniciarJuego}>Empezar de nuevo</button>
       <br />
-      <section className='game'> {/* Muestra el tablero*/}
-        {
-          tablero.map((_, index) => {
-            return (
-              <Cuadrado
+      <section className="game">
+        {tablero.map((cuadrado, index) => {
+          return (
+            <Cuadrado
               key={index}
               index={index}
-              updateTablero={updateTablero} //se ejecuta solo cuando se hace click por eso se pasa la funcion y no se la ejecuta
-              >
-                {tablero[index]}
-              </Cuadrado>
-            )
-          })
-        }
+              updateTablero={updateTablero}
+            >
+              {cuadrado}
+            </Cuadrado>
+          );
+        })}
       </section>
 
-     <section className='turn'>  {/* Muestra de quien es el turno */}
-        <Cuadrado isSelected={turno===turnos.X}>
-          {turnos.X}
-        </Cuadrado>
-        <Cuadrado isSelected={turno===turnos.O}>
-          {turnos.O}
-        </Cuadrado>
+      <section className="turn">
+        <Cuadrado isSelected={turno === turnos.X}>{turnos.X}</Cuadrado>
+        <Cuadrado isSelected={turno === turnos.O}>{turnos.O}</Cuadrado>
       </section>
+
+      {ganador && (
+        <section className="winner">
+          <div className="text">
+            <h2>{ganador === 'empate' ? '¡Empate!' : `¡El ganador es: ${ganador.toUpperCase()}!`}</h2>
+            <header className="win">
+              {ganador && <Cuadrado>{ganador}</Cuadrado>}
+            </header>
+            <footer>
+              <button onClick={reiniciarJuego}>Empezar de nuevo</button>
+            </footer>
+          </div>
+        </section>
+      )}
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
